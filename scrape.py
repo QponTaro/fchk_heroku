@@ -19,7 +19,7 @@ from selenium.webdriver.chrome.options import Options
 # from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 # from selenium.webdriver.support import expected_conditions as EC
-import chromedriver_binary  # Adds chromedriver binary to path
+import chromedriver_binary  # Adds chromedriver binary to path  # noqa: F401
 
 # import sys
 # from pathlib import Path
@@ -408,23 +408,9 @@ class FureaiNet:
                 # 予約実行 予約リストで予約
                 if ("dorsv" in self.EXEC_MODE):
                     rsv_list.append(
-                        rsv_datum(
-                            '歌の会',
-                            '2019',
-                            '11',
-                            '15',
-                            '',
-                            '麻生／視聴覚',
-                            '午後'))
+                        rsv_datum('歌の会', '2019', '11', '15', '', '麻生／視聴覚', '午後'))
                     rsv_list.append(
-                        rsv_datum(
-                            '歌の会',
-                            '2019',
-                            '12',
-                            '15',
-                            '',
-                            '高津／第２音楽',
-                            '午後'))
+                        rsv_datum('歌の会', '2019', '12', '15', '', '高津／第２音楽', '午後'))
                     msg = reserve_room(self, rsv_list)
 
             # =================================
