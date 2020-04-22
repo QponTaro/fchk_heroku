@@ -9,5 +9,6 @@ __pycache__/
 *.csv
 *.xlsx
 *.log
+*.lnk
 fchk_data.csv
 bash.exe.stackdump
