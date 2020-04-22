@@ -1,10 +1,13 @@
 .vscode/
 venv/
-__doc
+venv_fnc/
+__doc/
 __log/
 __trush
 __pycache__/
 *.pyc
-*.log
-*.xlsx
 *.csv
+*.xlsx
+*.log
+fchk_data.csv
+bash.exe.stackdump
