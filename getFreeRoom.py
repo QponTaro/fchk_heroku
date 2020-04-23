@@ -34,7 +34,8 @@ def make_chk_date_list():
 
     # 【開始日】
     #  今日の翌々月1日
-    date_from = (today + relativedelta(months=2)).replace(day=1)
+    date_from_2nd = (today + relativedelta(months=2)).replace(day=1)
+    date_from_1st = (today + relativedelta(weeks=1))
 
     # 【終了日】
     # 23日-30/31までは、４か月後の月末
@@ -51,13 +52,22 @@ def make_chk_date_list():
     date_to = today + relativedelta(months=addMonth + 1, day=1, days=-1)
     # date_to = (today + relativedelta(months=addMonth))
 
-    print('chk {} ~ {}'.format(date_from, date_to))
+    print('chk {}({}) ~ {}'.format(
+        date_from_1st.strftime('%m/%d'),
+        date_from_2nd.strftime('%m/%d'),
+        date_to.strftime('%m/%d')))
 
     lst = []
     for room in dic.check_ROOMs:
 
+        # 特別？な会場だけは、翌週からの空きチェック
+        if dic.chorus_ROOM[room] in {'〇', '◎'}:
+            date_from = date_from_1st
+        else:
+            date_from = date_from_2nd
+
         # === 日付ループ ===
-        t = date_from
+        t = date_from   # 翌週から。でも ◎〇のところだけ
         while t <= date_to:
 
             curWeek = datesub.get_weekstr(t.year, t.month, t.day)
