@@ -172,16 +172,12 @@ def chk_free_room_bs(self, lst):
 
         print('Script:' + script_str)
 
-        # vvv ちょっと待ってからスクリプト実行
-        # time.sleep(0.2)
-
+        # エレメントがクリック可能になったら スクリプト実行
         self.wait.until(EC.element_to_be_clickable(
             (By.CLASS_NAME, 'calclick')))
         self.driver.execute_script(script_str)
-        # print("# 日付：{0}/{1}({2}): 場所:{3}".
-        #      format(month, day, curWeek, room_str), end="")
 
-        time.sleep(0.2)  # 待ちを入れてみる
+        time.sleep(0.1)  # 待ちを入れてみる
 
         # =======================================================
         # 表示されている ページから 予約状況 を 取得する
