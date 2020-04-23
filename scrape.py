@@ -326,7 +326,7 @@ class FureaiNet:
 
     def run(self):
 
-        print('■ 現在時刻:{}:{}'.format(self.today.hour, self.today.time))
+        print('■ 現在時刻:{}'.format(self.today.strftime('%H:%M:%S')))
 
         # Heroku での 特殊処理
         if self.isHeroku:
@@ -354,19 +354,27 @@ class FureaiNet:
                 print('rsv 除外した　{}'.format(self.EXEC_MODE))
 
         # 3) 毎月 17~23日は 抽選状況チェックを追加
-        if self.today.day in [17, 18, 19, 20, 21, 22, 23]:
-            print('[抽選申込 期間]')
-            self.EXEC_MODE = self.EXEC_MODE + '/lot'
-        elif self.today.day in [24]:
-            print('[抽選日]')
-            self.EXEC_MODE = self.EXEC_MODE + '/lot'
-        elif self.today.day in [25, 26, 27, 28, 29, 30, 31, 1, 2, 3, 4]:
-            print('[確定 期間]')
-            self.EXEC_MODE = self.EXEC_MODE + '/lot'
+        lot_month = self.today.month + 4    # 今日は4月なら8月
+        chk_term = ""
+        if self.today.day in [17, 18, 19, 20, 21, 22, 23]:  # 抽選申込機関
+            chk_term = "申込"
+        elif self.today.day in [24]:                        # 抽選日
+            chk_term = "抽選"
+        elif self.today.day in [25, 26, 27, 28]:            # 抽選確定期間
+            chk_term = "確定"
+        elif self.today.day in [29, 30, 31, 1, 2, 3, 4]:    # 抽選確定期間
+            chk_term = "かるた"
         else:
-            print('--通常予約期間--')
+            chk_term = "通常"
+
+        # 特定 時期
+        if chk_term in {"申込", "抽選", "確定"}:
+            self.EXEC_MODE = self.EXEC_MODE + '/lot'
 
         try:  # ===========================================
+            # 取得開始
+            msg = ''
+
             # dataを読み込む
             FCHK_DATA = "data/fchk_data.csv"
             # rw_csv.read_data( FCHK_DATA, data.room_data )
@@ -377,17 +385,13 @@ class FureaiNet:
             # print(msg)
             self.logger.info(msg)
 
-            # 今日の日付を取得
-            today = datetime.datetime.now()
-
-            # 取得開始
-            msg = ''
-
-            # サービス休止時間帯は除外
-            if (today.hour >= 7)and(today.hour <= 24):
-                service_OK = True
+            # vvv ※今の瞬間の時間で判断するので再取得。
+            self.today = datetime.datetime.now()     # 今日の日付を取得
+            # サービス休止時間帯 0時～7時 は除外
+            if (self.today.hour >= 7)and(self.today.hour <= 24):
+                service_OK = True   # サービス利用可
             else:
-                service_OK = False
+                service_OK = False  # サービス休止時間帯
 
             # 空き探索する場合  ※これはサービス休止中でも可能
             if ("chk" in self.EXEC_MODE):
@@ -407,10 +411,10 @@ class FureaiNet:
 
                 # 予約実行 予約リストで予約
                 if ("dorsv" in self.EXEC_MODE):
-                    rsv_list.append(
-                        rsv_datum('歌の会', '2019', '11', '15', '', '麻生／視聴覚', '午後'))
-                    rsv_list.append(
-                        rsv_datum('歌の会', '2019', '12', '15', '', '高津／第２音楽', '午後'))
+                    # vvv ここから デバッグ用 テストデータ
+                    rsv_list.append(rsv_datum('歌の会', '2019', '11', '15', '', '麻生／視聴覚', '午後'))
+                    rsv_list.append(rsv_datum('歌の会', '2019', '12', '15', '', '高津／第２音楽', '午後'))
+                    # ^^^ ここまで
                     msg = reserve_room(self, rsv_list)
 
             # =================================
@@ -433,9 +437,14 @@ class FureaiNet:
             # chk_data2 = list(filter(lambda x: (x.pm in {'0','空'}) and (x.rank in {'〇','◎','◆','△'}),chk_data))
             chk_data2 = list(filter(lambda x: (x.pm in {'0', '空'}) and (x.rank in {'〇', '◎', '◆'}), chk_data))
             rsv_data2 = list(filter(lambda x: (x.rank in {"〇", "△", "◆"}), rsv_data))
+
+            # 時期によって さらに 表示情報を厳選する
+            if chk_term in {"通常", "抽選"}:
+                chk_data2 = list(filter(lambda x: (x.month < lot_month)))
+
             # ログメッセージ
             # msg = ">> ふれあいネット <<\n"
-            msg = "※{} 現在\n".format(today.strftime("%m/%d %H:%M"))
+            msg = "※{} 現在\n".format(self.today.strftime("%m/%d %H:%M"))
             mailMsg = ""
 
             # 空き情報２
@@ -444,15 +453,9 @@ class FureaiNet:
                 # 期間
                 # msg += "期間：{}～{}\n".format( date_from.strftime("%m-%d"), date_to.strftime("%m-%d"))
                 # msg += "時間帯：午後（{}-{}時）の 空き会議室 \n".format( self.from_time, self.to_time )
-                msg += "■ 空き会議室\n"
+                msg += "■ 空き会議室 (期間:" + chk_term + ")\n"
 
                 # 収集リストの表示
-                # for i in chk_data:
-                #    if i.pm in {'0', '空'}:
-                #        if i.rank in {'〇', '◎', '◆'}:
-                # ('username','year', 'month', 'day', 'week', 'start','end',
-                # 'bname', 'iname',
-                # 'am', 'pm', 'night','rank')
                 for i in chk_data2:
                     # print(i)
                     msg += "{0} {1}/{2}{3} {4}~{5} {6}/{7}({8})\n".format(
@@ -469,18 +472,6 @@ class FureaiNet:
                 msg += "■ 取りたい\n"
 
                 # 収集リストの表示
-                # 利用日時, 開始, 終了, 館名, 施設名, 支払状況
-                # for i in rsv_data:
-                #    if i.rank in {'◎'}:  # 最高の場所が確保できている
-                #       pass
-                #
-                #    if i.rank in {"〇","△","◆"}:
-                # 最高ではない
-                # 今一つ
-                # 今一つか、ボイトレ用
-                # ('username','year', 'month', 'day', 'week', 'start','end',
-                # 'bname', 'iname',
-                # 'am', 'pm', 'night','rank')
                 for i in rsv_data2:
                     # print(i)
                     msg += "{0} {1}/{2}{3} {4}~{5} {6}/{7}({8})\n".format(
@@ -494,16 +485,13 @@ class FureaiNet:
             if ("rsv" in self.EXEC_MODE):
                 print('>rsv_start')
 
-                # 収集リストの表示
-                # 期間
-                # msg += "■ 予約済 {}～{}\n".format(date_from.strftime("%m/%d"),
-                # date_to.strftime("%m/%d"))
                 msg += "■ 予約済\n"
 
-                # 利用日時, 開始, 終了, 館名, 施設名, 支払状況
+                # 収集リストの表示
                 for i in rsv_data:
 
                     # print(i)
+                    # 利用日時, 開始, 終了, 館名, 施設名, 支払状況
                     msg += "{0} {1}/{2}/{3} {4}~{5} {6}/{7}({8})\n".format(
                         i.username[0:1],
                         # str(i.year)[2:],
@@ -514,15 +502,12 @@ class FureaiNet:
             # 抽選情報
             if ("lot" in self.EXEC_MODE):
                 print('>lot_start')
-                # 期間
-                # msg += "■ 抽選申込 {}～{}\n".format(
-                # date_from.strftime("%m-%d"), date_to.strftime("%m-%d"))
                 msg += "■ 抽選申込\n"
 
                 # 収集リストの表示
-                # 利用日時, 開始, 終了, 館名, 施設名, 支払状況
                 for i in lot_data:
                     # print(i)
+                    # 利用日時, 開始, 終了, 館名, 施設名, 支払状況
                     msg += "{0} {1}/{2} {3}~{4} {5}/{6}({7})\n".format(
                         i.username[0:1],
                         # i.year,
