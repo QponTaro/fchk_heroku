@@ -354,7 +354,6 @@ class FureaiNet:
                 print('rsv 除外した　{}'.format(self.EXEC_MODE))
 
         # 3) 毎月 17~23日は 抽選状況チェックを追加
-        lot_month = self.today.month + 4    # 今日は4月なら8月
         chk_term = ""
         if self.today.day in [17, 18, 19, 20, 21, 22, 23]:  # 抽選申込機関
             chk_term = "申込"
@@ -384,6 +383,10 @@ class FureaiNet:
 
             # print(msg)
             self.logger.info(msg)
+
+            # ============================================
+            # Phase1 : スクレイピングして データを集める
+            # ============================================
 
             # vvv ※今の瞬間の時間で判断するので再取得。
             self.today = datetime.datetime.now()     # 今日の日付を取得
@@ -417,20 +420,27 @@ class FureaiNet:
                     # ^^^ ここまで
                     msg = reserve_room(self, rsv_list)
 
+            # vvv chromedriver の クローズ処理
+            # --> 本当はここにダイレクトに書きたくないけど 後回し。
+            self.driver.close()
+            self.driver.quit()
+
+            # =================================
+            #   Phase2 : データの処理
+            # =================================
+
             # =================================
             #   データ前処理
             # =================================
 
             # data をソート
-            room_data2 = sorted(
-                room_data, key=lambda x: (
-                    x[0], x[2], x[3], x[4]))
+            room_data2 = sorted(room_data, key=lambda x: (x[0], x[2], x[3], x[4]))
 
             # dataを csv に 書き出す
             rw_csv.write_data(FCHK_DATA, room_data2)
 
             # 各 要求ごとに 抽出
-            chk_data = list(filter(lambda x: '空き' in x[0], room_data2))
+            chk_data = list(filter(lambda x: '空き' in x.type, room_data2))
             rsv_data = list(filter(lambda x: '予約' in x[0], room_data2))
             lot_data = list(filter(lambda x: '抽選' in x[0], room_data2))
 
@@ -440,7 +450,10 @@ class FureaiNet:
 
             # 時期によって さらに 表示情報を厳選する
             if chk_term in {"通常", "抽選"}:
-                chk_data2 = list(filter(lambda x: (x.month < lot_month)))
+                # 抽選確定前の月の情報は表示しない
+                lot_month = (self.today.month + 16) % 12  # 今日は4月なら8月
+                chk_data3 = list(filter(lambda x: (x.month < lot_month), chk_data2))
+                chk_data2 = chk_data3
 
             # ログメッセージ
             # msg = ">> ふれあいネット <<\n"
@@ -526,11 +539,13 @@ class FureaiNet:
 
         except Exception:
             self.logger.error(traceback.format_exc())
+            self.driver.close()
+            self.driver.quit()
             print("エクセプション発生！")
 
         finally:
-            self.driver.close()
-            self.driver.quit()
+            # self.driver.close()
+            # self.driver.quit()
             print("終了。")
 
 
