@@ -359,15 +359,19 @@ class FureaiNet:
             chk_term = "申込"
         elif self.today.day in [24]:                        # 抽選日
             chk_term = "抽選"
-        elif self.today.day in [25, 26, 27, 28]:            # 抽選確定期間
+        elif self.today.day in [25]:                        # 抽選発表
+            chk_term = "発表"
+        elif self.today.day in [26, 27, 28]:                # 抽選確定期間
             chk_term = "確定"
-        elif self.today.day in [29, 30, 31, 1, 2, 3, 4]:    # 抽選確定期間
+        elif self.today.day in [29, 30, 31, 1, 2, 3, 4]:    # かるた機関
             chk_term = "かるた"
         else:
             chk_term = "通常"
 
+        # 申込 抽選 発表 確定 かるた 通常
+
         # 特定 時期
-        if chk_term in {"申込", "抽選", "確定"}:
+        if chk_term in {"申込", "抽選", "発表", "確定"}:
             self.EXEC_MODE = self.EXEC_MODE + '/lot'
 
         try:  # ===========================================
@@ -449,6 +453,7 @@ class FureaiNet:
             rsv_data2 = list(filter(lambda x: (x.rank in {"〇", "△", "◆"}), rsv_data))
 
             # 時期によって さらに 表示情報を厳選する
+            # (!) 抽選確定前の
             if chk_term in {"通常", "抽選"}:
                 # 抽選確定前の月の情報は表示しない
                 lot_month = (self.today.month + 16) % 12  # 今日は4月なら8月
@@ -515,7 +520,14 @@ class FureaiNet:
             # 抽選情報
             if ("lot" in self.EXEC_MODE):
                 print('>lot_start')
-                msg += "■ 抽選申込\n"
+                msg += "■ 抽選申込 (期間:" + chk_term + ")\n"
+
+                # 時期によって さらに 表示情報を厳選する
+                if chk_term not in {"発表"}:
+
+                    # 当選 情報だけを抽出する
+                    lot_data_tmp = list(filter(lambda x: ('当選' in x.state), lot_data))
+                    lot_data = lot_data_tmp
 
                 # 収集リストの表示
                 for i in lot_data:
