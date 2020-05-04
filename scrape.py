@@ -329,6 +329,7 @@ class FureaiNet:
         print('■ 現在時刻:{}'.format(self.today.strftime('%H:%M:%S')))
 
         # Heroku での 特殊処理
+        sp_str = "PC"
         if self.isHeroku:
             print('■ Exec on Heroku ■')
 
@@ -348,10 +349,12 @@ class FureaiNet:
             # １) rsv が付いていても 間引く ※間引かない時間を指定する
             if self.today.hour in [6, 9, 12, 15, 18, 21, 24, 0]:
                 print('rsv 除外しない')
+                sp_str = "H"
                 pass
             else:
                 self.EXEC_MODE = self.EXEC_MODE.replace("rsv", "")
                 print('rsv 除外した　{}'.format(self.EXEC_MODE))
+                sp_str = "H:rsv除外"
 
         # 3) 毎月 17~23日は 抽選状況チェックを追加
         chk_term = ""
@@ -419,8 +422,14 @@ class FureaiNet:
                 # 予約実行 予約リストで予約
                 if ("dorsv" in self.EXEC_MODE):
                     # vvv ここから デバッグ用 テストデータ
-                    rsv_list.append(rsv_datum('歌の会', '2019', '11', '15', '', '麻生／視聴覚', '午後'))
-                    rsv_list.append(rsv_datum('歌の会', '2019', '12', '15', '', '高津／第２音楽', '午後'))
+                    rsv_list.append(rsv_datum('歌の会', '2020', '05', '17', '', '多摩／視聴覚', '午後'))
+                    rsv_list.append(rsv_datum('歌の会', '2020', '05', '23', '', '多摩／視聴覚', '午後'))
+                    # vvv かるた
+                    # rsv_list.append(rsv_datum('歌の会', '2020', '08', '29', '', '麻生／視聴覚', '午後'))
+                    # rsv_list.append(rsv_datum('歌の会', '2020', '08', '30', '', '麻生／視聴覚', '午後'))
+                    # rsv_list.append(rsv_datum('歌の会', '2020', '08', '01', '', '麻生／視聴覚', '午後'))
+                    # rsv_list.append(rsv_datum('歌の会', '2020', '08', '22', '', '麻生／視聴覚', '午後'))
+                    # rsv_list.append(rsv_datum('歌の会', '2020', '08', '16', '', '高津／第１音楽', '午後'))
                     # ^^^ ここまで
                     msg = reserve_room(self, rsv_list)
 
@@ -462,7 +471,7 @@ class FureaiNet:
 
             # ログメッセージ
             # msg = ">> ふれあいネット <<\n"
-            msg = "※{} 現在\n".format(self.today.strftime("%m/%d %H:%M"))
+            msg = "※{} 現在 {}\n".format(self.today.strftime("%m/%d %H:%M"), sp_str)
             mailMsg = ""
 
             # 空き情報２
