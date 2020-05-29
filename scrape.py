@@ -347,7 +347,7 @@ class FureaiNet:
                 return
 
             # １) rsv が付いていても 間引く ※間引かない時間を指定する
-            if self.today.hour in [6, 9, 12, 15, 18, 21, 24, 0]:
+            if self.today.hour in [7, 8, 12, 18, 23, 24, 0]:
                 print('rsv 除外しない')
                 sp_str = "H"
                 pass
